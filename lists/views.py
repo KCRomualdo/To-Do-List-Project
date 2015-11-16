@@ -1,3 +1,4 @@
+from django.core.exceptions import ValidationError
 from django.http import HttpResponse
 from django.shortcuts import render
 from lists.models import Item, List
@@ -19,8 +20,17 @@ def new_list(request):
 	#Item.objects.create(text=request.POST['item_text'])
 	#return redirect('/lists/the-only-list-in-the-world/')
 	list_=List.objects.create()
-	Item.objects.create(text=request.POST['item_text'],list=list_)
-	#return redirect('/lists/the-only-list-in-the-world/')
+	item=Item.objects.create(text=request.POST['item_text'],list=list_)
+	try:
+		item.full_clean()
+		item.save()
+	except ValidationError:
+		#pass
+		list_.delete()
+		error="You can't have an empty list item"
+		return render(request,'home.html',{"error":error})
+
+		#return redirect('/lists/the-only-list-in-the-world/')
 	return redirect('/lists/%d/' % (list_.id,))
 
 def add_item(request,list_id):
